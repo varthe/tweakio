@@ -93,7 +93,15 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 
 func GenerateCapsResponse(t string) (string, error) {
 	if t == "search" || t == "tvsearch" {
-		fakeResult := parser.TorrentioResult{
+		fakeMovie := parser.TorrentioResult{
+			Title:    "Fake Movie 1080p WEB-DL",
+			InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
+			Size:     2.5,
+			Peers:    100,
+			Category: 2000,
+			Source:   "FakeIndexer",
+		}
+		fakeShow := parser.TorrentioResult{
 			Title:    "Fake Show S01E01 1080p WEB-DL",
 			InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
 			Size:     2.5,
@@ -101,7 +109,7 @@ func GenerateCapsResponse(t string) (string, error) {
 			Category: 5000,
 			Source:   "FakeIndexer",
 		}
-		return ConvertToTorznab([]parser.TorrentioResult{fakeResult}, "http://tweakio:3185/api")
+		return ConvertToTorznab([]parser.TorrentioResult{fakeMovie, fakeShow}, "http://tweakio:3185/api")
 	}
 
 	capsXML := `<?xml version="1.0" encoding="UTF-8"?>
