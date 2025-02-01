@@ -1,0 +1,76 @@
+# Dependency directories
+vendor/
+
+# Version control
+.git/
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+bin/
+dist/
+tmp/
+*.exe
+*.test
+*.out
+
+# Go build cache
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Debugging files
+*.prof
+*.trace
+
+# Secrets and credentials
+.env
+.env.*.local
+secrets/
+
+# Config files
+*.yaml
+*.yml
+*.toml
+*.ini
+*.conf
+
+# Documentation & misc files
+*.md
+*.txt
+LICENSE
+README*
+
+# IDE configurations
+.vscode/
+.idea/
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.sqlite
+*.sqlite-journal
+.cursorrules
+
+# Editor temp files
+*~
+*.swp
+*.swo
+
+# Don't ignore these important files
+!go.mod
+!go.sum

@@ -1,0 +1,48 @@
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Build artifacts
+dist/
+build/
+*.js
+*.js.map
+*.d.ts
+*.d.ts.map
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Secrets and credentials
+secrets/
+.env
+.env.*.local
+
+# IDE configurations
+.vscode/
+.idea/
+.ai/
+.cursorrules
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Config files
+.prettierrc
+.editorconfig
+config.yaml
+
+# Temp files
+*.tmp
+*.temp
+
+# Database
+*.sqlite

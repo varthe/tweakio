@@ -1,0 +1,172 @@
+package parser
+
+import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
+	"tweakio/config"
+	"tweakio/internal/api"
+	"tweakio/internal/cache"
+)
+
+var Regexes *RegexPatterns
+
+type RegexPatterns struct {
+	Size          *regexp.Regexp
+	Season        *regexp.Regexp
+	SeasonRange   *regexp.Regexp
+	SingleEpisode *regexp.Regexp
+	EpisodeRange  *regexp.Regexp
+	Episode       *regexp.Regexp
+	Info          *regexp.Regexp
+}
+
+type TorrentioResult struct {
+	Title    string 
+	Link     string
+	Size     float64
+	InfoHash string 
+	Peers    int   
+	Category int   
+	Source 	 string 
+}
+
+
+func CompileRegex(cfg *config.Config) (error) {
+	regexes := &RegexPatterns{}
+	var err error
+
+	if regexes.Season, err = regexp.Compile(cfg.Regex.Season); err != nil {
+		return err
+	}
+	if regexes.SeasonRange, err = regexp.Compile(cfg.Regex.SeasonRange); err != nil {
+		return err
+	}
+	if regexes.SingleEpisode, err = regexp.Compile(cfg.Regex.SingleEpisode); err != nil {
+		return err
+	}
+	if regexes.EpisodeRange, err = regexp.Compile(cfg.Regex.EpisodeRange); err != nil {
+		return err
+	}
+	if regexes.Episode, err = regexp.Compile(cfg.Regex.Episode); err != nil {
+		return err
+	}
+	if regexes.Info, err = regexp.Compile(cfg.Regex.Info); err != nil {
+		return err
+	}
+
+	Regexes = regexes
+	return nil
+}
+
+func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) (*TorrentioResult) {
+	parsedResult, ok := result.(map[string]interface{})
+	if !ok {
+		fmt.Println("Invalid Torrentio result format")
+		return nil 
+	}
+
+	title, ok := parsedResult["title"].(string)
+	if !ok {
+		fmt.Println("Missing title from Torrentio result")
+		return nil
+	}
+
+	cleanTitle := GetCleanTitle(title)
+
+	torrentioResult := &TorrentioResult{
+		Title: cleanTitle,
+		InfoHash: parsedResult["infoHash"].(string),
+		Category: 5000,
+	}
+
+	parseInfo(title, torrentioResult)
+
+	if mediaType != "tvsearch" {
+		torrentioResult.Category = 2000
+		return torrentioResult
+	}
+
+	if start, end, found := GetSeasonRange(cleanTitle); found {
+		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
+		torrentioResult.Size *= float64(episodes)
+		return torrentioResult
+	} 
+	if season, found := GetSeasonNumber(cleanTitle); found {
+		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
+		torrentioResult.Size *= float64(episodes)
+		return torrentioResult
+	} 
+	if start, end, found := GetEpisodeRange(cleanTitle); found {
+		episodes := end - start + 1
+		torrentioResult.Size *= float64(episodes)
+		return torrentioResult
+	}
+	return torrentioResult
+}
+
+func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {
+	episodes := 0
+	for i := start; i <= end; i++ {
+		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
+			episodes += seasonEpisodes
+		} else {
+			seasonEpisodes := httpClient.FetchEpisodesFromTMDB(imdbID, i)
+			episodeCache.Set(imdbID, i, seasonEpisodes)
+			episodes += seasonEpisodes
+		}
+	}
+	return episodes
+}
+
+func parseInfo(title string, torrentioResult *TorrentioResult) {
+	peers := 0
+	size := float64(0)
+	source := "Unknown"
+
+	if match := Regexes.Info.FindStringSubmatch(title); len(match) == 5 {
+		peers, _ = strconv.Atoi(match[1])
+		size, _ = strconv.ParseFloat(match[2], 64)
+		sizeUnit := match[3]
+		source = match[4]
+
+		if sizeUnit == "MB" {
+			size /= 1024
+		}
+	}
+	
+	torrentioResult.Peers = peers
+	torrentioResult.Size = size
+	torrentioResult.Source = source
+}
+
+func GetCleanTitle(title string) (string) {
+	return strings.Split(title, "\n")[0]
+}
+
+func GetSeasonRange(title string) (int, int, bool) {
+	if match := Regexes.SeasonRange.FindStringSubmatch(title); len(match) > 2 {
+		start, _ := strconv.Atoi(match[1])
+		end, _ := strconv.Atoi(match[2])
+		return start, end, true
+	}
+	return 0, 0, false
+}
+
+func GetSeasonNumber(title string) (int, bool) {
+	if match := Regexes.Season.FindStringSubmatch(title); len(match) > 1 {
+		season, _ := strconv.Atoi(match[1])
+		return season, true
+	}
+	return 0, false
+}
+
+func GetEpisodeRange(title string) (start, end int, found bool) {
+	if match := Regexes.EpisodeRange.FindStringSubmatch(title); len(match) == 3 {
+		start, _ = strconv.Atoi(match[1])
+		end, _ = strconv.Atoi(match[2])
+		return start, end, true
+	}
+	return 0, 0, false
+}
