@@ -30,6 +30,7 @@ secrets/
 .ai/
 .cursorrules
 *.iml
+test/
 
 # OS-specific files
 .DS_Store
@@ -38,7 +39,7 @@ Thumbs.db
 # Config files
 .prettierrc
 .editorconfig
-config.yaml
+*.yaml
 
 # Temp files
 *.tmp
