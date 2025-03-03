@@ -1,6 +1,6 @@
 # tweakio
 
-Prowlarr indexer that estimates the size of season packs retrieved from Torrentio
+Prowlarr indexer for Torrentio
 
 ### Docker Compose
 
