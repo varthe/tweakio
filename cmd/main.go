@@ -36,7 +36,7 @@ func main() {
 func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) {
 	query := r.URL.Query()
 	t := query.Get("t")
-	imdbID := fmt.Sprintf("tt%s", query.Get("imdbid"))
+	imdbID := "tt" + query.Get("imdbid")
 	season, _ := strconv.Atoi(query.Get("season"))
 	episode, _ := strconv.Atoi(query.Get("ep"))
 

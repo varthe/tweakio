@@ -3,6 +3,7 @@ package torznab
 import (
 	"encoding/xml"
 	"fmt"
+	"strconv"
 	"tweakio/internal/parser"
 )
 
@@ -47,12 +48,12 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 	var items []TorznabItem
 
 	for _, r := range results {
-		magnetLink := fmt.Sprintf("magnet:?xt=urn:btih:%s", r.InfoHash)	
+		magnetLink := "magnet:?xt=urn:btih:" + r.InfoHash	
 
 		attrs := []TorznabAttr{
-			{"category", fmt.Sprintf("%d", r.Category)},
-			{"seeders", fmt.Sprintf("%d", r.Peers)},
-			{"source", fmt.Sprintf("%s (Tweakio)", r.Source)},
+			{"category", strconv.Itoa(r.Category)},
+			{"seeders", strconv.Itoa(r.Peers)},
+			{"source", r.Source + " (Tweakio)"},
 		}
 
 		item := TorznabItem{
