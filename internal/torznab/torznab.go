@@ -3,6 +3,7 @@ package torznab
 import (
 	"encoding/xml"
 	"fmt"
+	"strconv"
 	"tweakio/internal/parser"
 )
 
@@ -47,12 +48,12 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 	var items []TorznabItem
 
 	for _, r := range results {
-		magnetLink := fmt.Sprintf("magnet:?xt=urn:btih:%s", r.InfoHash)	
+		magnetLink := "magnet:?xt=urn:btih:" + r.InfoHash	
 
 		attrs := []TorznabAttr{
-			{"category", fmt.Sprintf("%d", r.Category)},
-			{"seeders", fmt.Sprintf("%d", r.Peers)},
-			{"source", fmt.Sprintf("%s (Tweakio)", r.Source)},
+			{"category", strconv.Itoa(r.Category)},
+			{"seeders", strconv.Itoa(r.Peers)},
+			{"source", r.Source + " (Tweakio)"},
 		}
 
 		item := TorznabItem{
@@ -94,7 +95,7 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 func GenerateCapsResponse(t string) (string, error) {
 	if t == "search" || t == "tvsearch" {
 		fakeMovie := parser.TorrentioResult{
-			Title:    "Fake Movie 1080p WEB-DL",
+			Title:    "No results! Make sure to use the IMDb ID to search",
 			InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
 			Size:     2.5,
 			Peers:    100,
@@ -102,7 +103,7 @@ func GenerateCapsResponse(t string) (string, error) {
 			Source:   "FakeIndexer",
 		}
 		fakeShow := parser.TorrentioResult{
-			Title:    "Fake Show S01E01 1080p WEB-DL",
+			Title:    "No results! Make sure to use the IMDb ID to search",
 			InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
 			Size:     2.5,
 			Peers:    100,

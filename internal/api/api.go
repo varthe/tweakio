@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -100,7 +101,7 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 		return "", fmt.Errorf("invalid TMDB ID format")
 	}
 
-	return fmt.Sprintf("%.0f", tmdbID), nil
+	return strconv.FormatFloat(tmdbID, 'f', 0, 64), nil
 }
 
 func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int) {
