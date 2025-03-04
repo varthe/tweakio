@@ -94,7 +94,7 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 func GenerateCapsResponse(t string) (string, error) {
 	if t == "search" || t == "tvsearch" {
 		fakeMovie := parser.TorrentioResult{
-			Title:    "Fake Movie 1080p WEB-DL",
+			Title:    "No results! Make sure to use the IMDb ID to search",
 			InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
 			Size:     2.5,
 			Peers:    100,
@@ -102,7 +102,7 @@ func GenerateCapsResponse(t string) (string, error) {
 			Source:   "FakeIndexer",
 		}
 		fakeShow := parser.TorrentioResult{
-			Title:    "Fake Show S01E01 1080p WEB-DL",
+			Title:    "No results! Make sure to use the IMDb ID to search",
 			InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
 			Size:     2.5,
 			Peers:    100,
