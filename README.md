@@ -1,6 +1,6 @@
-# tweakio
+# Tweakio
 
-Prowlarr indexer for Torrentio
+Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integrate seamlessly with Radarr and Sonarr.
 
 ### Docker Compose
 
@@ -16,6 +16,10 @@ tweakio:
 ```
 
 ### Config.yaml
+
+#### ⚠️ Note about file sizes and TMDB
+
+Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
 ```yaml
 torrentio:
@@ -46,10 +50,11 @@ regex:
   info: "👤\\s*(\\d+)\\s*💾\\s*([\\d.]+)\\s*(GB|MB)\\s*⚙️\\s*(.+)"
 ```
 
-#### Prowlarr Integration
+### Prowlarr Integration
 
-1. Click on **Add Indexer**
-2. Search for **Generic Torznab** and click it
-3. Change **Name** to `Tweakio`
-4. Set **Url** to `http://tweakio:3185`
-5. Click **Test** and **Save**
+1. Put Tweakio and Prowlarr on the **same docker network**
+2. Click on **Add Indexer**
+3. Search for **Generic Torznab** and click it
+4. Change **Name** to `Tweakio`
+5. Set **Url** to `http://tweakio:3185`
+6. Click **Test** and **Save**
