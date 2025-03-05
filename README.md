@@ -21,6 +21,9 @@ tweakio:
 
 Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
+#### ⚠️ Oracle VPS users will need to route Tweakio through Warp or a VPN
+<br />
+
 ```yaml
 torrentio:
   base_url: https://torrentio.strem.fun/
