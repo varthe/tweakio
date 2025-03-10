@@ -18,14 +18,25 @@ type APIClient struct {
 	Client *http.Client
 }
 
+type userAgentTransport struct {
+	transport http.RoundTripper
+}
+
 func NewAPIClient(torrentioBaseURL, torrentioOptions, tmdbAPIKey string) *APIClient {
 	return &APIClient{
 		TorrentioBaseURL: torrentioBaseURL,
 		TorrentioOptions: torrentioOptions,
 		TMDBBaseURL: "https://api.themoviedb.org/3",
 		TMDBAPIKey: tmdbAPIKey,
-		Client: &http.Client{},
+		Client: &http.Client{
+			Transport: &userAgentTransport{transport: http.DefaultTransport},
+		},
 	}
+}
+
+func (u *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
+	return u.transport.RoundTrip(req)
 }
 
 func fetchJSON(httpClient *http.Client, url string, result interface{}) error {
