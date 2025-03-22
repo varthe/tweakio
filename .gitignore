@@ -39,7 +39,7 @@ Thumbs.db
 # Config files
 .prettierrc
 .editorconfig
-*.yaml
+config.yaml
 
 # Temp files
 *.tmp
