@@ -5,7 +5,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"tweakio/config"
 	"tweakio/internal/api"
 	"tweakio/internal/cache"
 )
@@ -23,36 +22,35 @@ type RegexPatterns struct {
 }
 
 type TorrentioResult struct {
-	Title    string 
+	Title    string
 	Link     string
 	Size     float64
-	InfoHash string 
-	Peers    int   
-	Category int   
-	Source 	 string 
+	InfoHash string
+	Peers    int
+	Category int
+	Source   string
 }
 
-
-func CompileRegex(cfg *config.Config) (error) {
+func CompileRegex() error {
 	regexes := &RegexPatterns{}
 	var err error
 
-	if regexes.Season, err = regexp.Compile(cfg.Regex.Season); err != nil {
+	if regexes.Season, err = regexp.Compile("(?i)\\b(?:season\\s*|s)(\\d{1,2})(?:\\s+(?:complete|full|pack|multi)|\\.[a-z]+)?\\b"); err != nil {
 		return err
 	}
-	if regexes.SeasonRange, err = regexp.Compile(cfg.Regex.SeasonRange); err != nil {
+	if regexes.SeasonRange, err = regexp.Compile("(?i)\\b(?:s(?:eason)?\\s*\\d{1,2}(?:-s?(?:eason)?\\s*\\d{1,2})|s\\d{1,2}e\\d{1,2}-\\d{1,2})\\b"); err != nil {
 		return err
 	}
-	if regexes.SingleEpisode, err = regexp.Compile(cfg.Regex.SingleEpisode); err != nil {
+	if regexes.SingleEpisode, err = regexp.Compile("(?i)\\bs\\d{1,2}e\\d{1,2}\\b"); err != nil {
 		return err
 	}
-	if regexes.EpisodeRange, err = regexp.Compile(cfg.Regex.EpisodeRange); err != nil {
+	if regexes.EpisodeRange, err = regexp.Compile("\\bS?\\d{1,2}E(\\d{1,3})-(\\d{1,3})\\b"); err != nil {
 		return err
 	}
-	if regexes.Episode, err = regexp.Compile(cfg.Regex.Episode); err != nil {
+	if regexes.Episode, err = regexp.Compile("\\b[eE]\\d{2,3}\\b"); err != nil {
 		return err
 	}
-	if regexes.Info, err = regexp.Compile(cfg.Regex.Info); err != nil {
+	if regexes.Info, err = regexp.Compile("👤\\s*(\\d+)\\s*💾\\s*([\\d.]+)\\s*(GB|MB)\\s*⚙️\\s*(.+)"); err != nil {
 		return err
 	}
 
@@ -60,11 +58,11 @@ func CompileRegex(cfg *config.Config) (error) {
 	return nil
 }
 
-func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) (*TorrentioResult) {
+func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) *TorrentioResult {
 	parsedResult, ok := result.(map[string]interface{})
 	if !ok {
 		fmt.Println("Invalid Torrentio result format")
-		return nil 
+		return nil
 	}
 
 	title, ok := parsedResult["title"].(string)
@@ -76,7 +74,7 @@ func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.A
 	cleanTitle := GetCleanTitle(title)
 
 	torrentioResult := &TorrentioResult{
-		Title: cleanTitle,
+		Title:    cleanTitle,
 		InfoHash: parsedResult["infoHash"].(string),
 		Category: 5000,
 	}
@@ -92,12 +90,12 @@ func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.A
 		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult
-	} 
+	}
 	if season, found := GetSeasonNumber(cleanTitle); found {
 		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult
-	} 
+	}
 	if start, end, found := GetEpisodeRange(cleanTitle); found {
 		episodes := end - start + 1
 		torrentioResult.Size *= float64(episodes)
@@ -135,13 +133,13 @@ func parseInfo(title string, torrentioResult *TorrentioResult) {
 			size /= 1024
 		}
 	}
-	
+
 	torrentioResult.Peers = peers
 	torrentioResult.Size = size
 	torrentioResult.Source = source
 }
 
-func GetCleanTitle(title string) (string) {
+func GetCleanTitle(title string) string {
 	return strings.Split(title, "\n")[0]
 }
 

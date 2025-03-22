@@ -3,16 +3,10 @@ package parser
 import (
 	"regexp"
 	"testing"
-	"tweakio/config"
 )
 
 func TestCompiledRegexPatterns(t *testing.T) {
-	cfg, err := config.LoadConfig("../../config.yaml")
-	if err != nil {
-		t.Fatalf("Failed to load config: %v", err)
-	}
-
-	if err := CompileRegex(cfg); err != nil {
+	if err := CompileRegex(); err != nil {
 		t.Fatalf("Failed to compile regex: %v", err)
 	}
 
@@ -48,7 +42,6 @@ func TestCompiledRegexPatterns(t *testing.T) {
 			{"", false},
 			{"👤 0 💾 0 GB ⚙️ Unknown", true},
 			{"👤 1500 💾 2.33 GB ⚙️ CornHub", true},
-
 		},
 	}
 
@@ -75,7 +68,7 @@ func TestCompiledRegexPatterns(t *testing.T) {
 
 			for _, test := range cases {
 				if match := regex.MatchString(test.input); match != test.expected {
-					t.Errorf("Input '%s': expected %v, got %v", 
+					t.Errorf("Input '%s': expected %v, got %v",
 						test.input, test.expected, match)
 					failed = true
 				}
