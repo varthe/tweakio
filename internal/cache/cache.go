@@ -19,8 +19,8 @@ type entry struct {
 
 func CreateEpisodeCache(maxSize int) *EpisodeCache {
 	return &EpisodeCache{
-		maxSize: maxSize,
-		cache: make(map[string]*list.Element),
+		maxSize:  maxSize,
+		cache:    make(map[string]*list.Element),
 		eviction: list.New(),
 	}
 }
@@ -56,8 +56,8 @@ func (c *EpisodeCache) Set(imdbID string, season, episodeCount int) {
 		}
 	}
 
-	newEntry := &entry {
-		key: imdbID,
+	newEntry := &entry{
+		key:   imdbID,
 		value: map[int]int{season: episodeCount},
 	}
 	elem := c.eviction.PushFront(newEntry)

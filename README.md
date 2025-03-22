@@ -32,25 +32,6 @@ torrentio:
 tmdb:
   api_key: "" # If empty, defaults to 10 episodes for everything
   cache_size: 1000
-
-regex:
-  # Matches season numbers and season packs: "Season 3", "S02 COMPLETE", "Season 2 Pack", "S02.MULTi"
-  season: "(?i)\\b(?:season\\s*|s)(\\d{1,2})(?:\\s+(?:complete|full|pack|multi)|\\.[a-z]+)?\\b"
-
-  # Matches season ranges: "S01-S03", "Season 1-3", "S03-05", "S1-3"
-  season_range: "(?i)\\b(?:s(?:eason)?\\s*\\d{1,2}(?:-s?(?:eason)?\\s*\\d{1,2})|s\\d{1,2}e\\d{1,2}-\\d{1,2})\\b"
-
-  # Matches single episodes: "S02E05", "s01e01", "S1E1"
-  single_episode: "(?i)\\bs\\d{1,2}e\\d{1,2}\\b"
-
-  # Matches generic episode numbers: "E05", "e10"
-  episode: "\\b[eE]\\d{2,3}\\b"
-
-  # Matches episode ranges:"S02E01-09", "S1E01-10", "E01-09" (without season)
-  episode_range: "\\bS?\\d{1,2}E(\\d{1,3})-(\\d{1,3})\\b"
-
-  # Extracts peers, size, and source from text: 👤 15 💾 28.68 GB ⚙️ TorrentGalaxy.
-  info: "👤\\s*(\\d+)\\s*💾\\s*([\\d.]+)\\s*(GB|MB)\\s*⚙️\\s*(.+)"
 ```
 
 ### Prowlarr Integration
