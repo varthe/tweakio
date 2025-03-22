@@ -2,6 +2,13 @@
 
 Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integrate seamlessly with Radarr and Sonarr.
 
+#### ⚠️ Note about file sizes and TMDB
+
+Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
+
+#### ⚠️ Oracle VPS users will need to route Tweakio through Warp or a VPN
+
+
 ### Docker Compose
 
 ```yaml
@@ -16,13 +23,6 @@ tweakio:
 ```
 
 ### Config.yaml
-
-#### ⚠️ Note about file sizes and TMDB
-
-Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
-
-#### ⚠️ Oracle VPS users will need to route Tweakio through Warp or a VPN
-<br />
 
 ```yaml
 torrentio:
