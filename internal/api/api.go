@@ -13,9 +13,9 @@ import (
 type APIClient struct {
 	TorrentioBaseURL string
 	TorrentioOptions string
-	TMDBBaseURL string
-	TMDBAPIKey string
-	Client *http.Client
+	TMDBBaseURL      string
+	TMDBAPIKey       string
+	Client           *http.Client
 }
 
 type userAgentTransport struct {
@@ -26,8 +26,8 @@ func NewAPIClient(torrentioBaseURL, torrentioOptions, tmdbAPIKey string) *APICli
 	return &APIClient{
 		TorrentioBaseURL: torrentioBaseURL,
 		TorrentioOptions: torrentioOptions,
-		TMDBBaseURL: "https://api.themoviedb.org/3",
-		TMDBAPIKey: tmdbAPIKey,
+		TMDBBaseURL:      "https://api.themoviedb.org/3",
+		TMDBAPIKey:       tmdbAPIKey,
 		Client: &http.Client{
 			Transport: &userAgentTransport{transport: http.DefaultTransport},
 		},
@@ -101,7 +101,7 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 	if !ok || len(tvResults) == 0 {
 		return "", fmt.Errorf("no TMDB ID found for IMDB ID %s", imdbID)
 	}
-	
+
 	tvData, ok := tvResults[0].(map[string]interface{})
 	if !ok {
 		return "", fmt.Errorf("invalid TMDB data format")
@@ -115,7 +115,7 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 	return strconv.FormatFloat(tmdbID, 'f', 0, 64), nil
 }
 
-func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int) {
+func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) int {
 	if c.TMDBAPIKey == "" {
 		return 10
 	}

@@ -15,10 +15,10 @@ import (
 func main() {
 	cfg, err := config.LoadConfig("./config.yaml")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err) 
+		log.Fatalf("Failed to load config: %v", err)
 	}
-	
-	if err := parser.CompileRegex(cfg); err != nil {
+
+	if err := parser.CompileRegex(); err != nil {
 		log.Fatalf("Failed to compile regex: %v", err)
 	}
 
@@ -45,28 +45,24 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 	if t == "caps" || (t == "search" && imdbID == "tt") {
 		capsResponse, err := torznab.GenerateCapsResponse(t)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error generating Torznab response: %v", err), http.StatusInternalServerError)		
+			http.Error(w, fmt.Sprintf("Error generating Torznab response: %v", err), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/xml")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(capsResponse))
+		writeResponse(w, capsResponse)
 		return
 	}
 
 	if t == "rss" {
 		emptyRSS := `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel></channel></rss>`
-		w.Header().Set("Content-Type", "application/xml")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(emptyRSS))
+		writeResponse(w, emptyRSS)
 		return
 	}
 
 	if imdbID == "" {
 		http.Error(w, "Missing required parameter: imdbid", http.StatusBadRequest)
 		return
-	} 
- 
+	}
+
 	mediaType := "movie"
 	if t == "tvsearch" {
 		mediaType = "series"
@@ -92,7 +88,14 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 		return
 	}
 
+	writeResponse(w, torznabResponse)
+}
+
+func writeResponse(w http.ResponseWriter, response string) {
 	w.Header().Set("Content-Type", "application/xml")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(torznabResponse))
+	_, err := w.Write([]byte(response))
+	if err != nil {
+		log.Printf("Error writing response: %v", err)
+	}
 }
