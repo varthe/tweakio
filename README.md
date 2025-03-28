@@ -36,7 +36,7 @@ tmdb:
 
 ### Prowlarr Integration
 
-1. Put Tweakio and Prowlarr on the **same docker network**
+1. 🚨 Ensure that Tweakio and Prowlarr are on the **same docker network** 🚨
 2. Click on **Add Indexer**
 3. Search for **Generic Torznab** and click it
 4. Change **Name** to `Tweakio`
