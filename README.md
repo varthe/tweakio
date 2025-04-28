@@ -12,7 +12,7 @@ Torrentio only returns the size of a single episode, so file size estimates for 
 ### Docker Compose
 
 ```yaml
-services
+services:
   tweakio:
     image: varthe/tweakio:latest
     container_name: tweakio
