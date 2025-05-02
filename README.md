@@ -8,19 +8,31 @@ Torrentio only returns the size of a single episode, so file size estimates for 
 
 #### ⚠️ Oracle VPS users will need to route Tweakio through Warp or a VPN
 
-
 ### Docker Compose
+
+> [!TIP]
+> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container. Then uncomment the `networks` section of the Docker Compose.
+>
+> ```bash
+> docker network create tweakio_network
+> docker network connect tweakio_network prowlarr_container
+> ```
 
 ```yaml
 services:
   tweakio:
-    image: varthe/tweakio:latest
-    container_name: tweakio
-    hostname: tweakio
-    ports:
-      - "3185:3185"
-    volumes:
-      - /opt/tweakio/config.yaml:/app/config.yaml
+  image: varthe/tweakio:latest
+  container_name: tweakio
+  hostname: tweakio
+  ports:
+    - "3185:3185"
+  volumes:
+    - /opt/tweakio/config.yaml:/app/config.yaml
+  # networks:
+  #     - tweakio_network
+# networks:
+#     tweakio_network:
+#         external: true
 ```
 
 ### Config.yaml
@@ -37,7 +49,8 @@ tmdb:
 
 ### Prowlarr Integration
 
-1. 🚨 Ensure that Tweakio and Prowlarr are on the **same docker network** 🚨
+Then in Prowlarr:
+
 2. Click on **Add Indexer**
 3. Search for **Generic Torznab** and click it
 4. Change **Name** to `Tweakio`
