@@ -28,11 +28,12 @@ services:
     - "3185:3185"
   volumes:
     - /opt/tweakio/config.yaml:/app/config.yaml
-  # networks:
-  #     - tweakio_network
-# networks:
-#     tweakio_network:
-#         external: true
+  networks:
+    - tweakio_network
+
+networks:
+  tweakio_network:
+    external: true
 ```
 
 ### Config.yaml
@@ -49,10 +50,10 @@ tmdb:
 
 ### Prowlarr Integration
 
-Then in Prowlarr:
+In Prowlarr:
 
-2. Click on **Add Indexer**
-3. Search for **Generic Torznab** and click it
-4. Change **Name** to `Tweakio`
-5. Set **Url** to `http://tweakio:3185`
-6. Click **Test** and **Save**
+1. Click on **Add Indexer**
+2. Search for **Generic Torznab** and click it
+3. Change **Name** to `Tweakio`
+4. Set **Url** to `http://tweakio:3185`
+5. Click **Test** and **Save**
