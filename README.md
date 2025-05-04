@@ -6,7 +6,7 @@ Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integra
 >Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
 > [!TIP]
-> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container. Then uncomment the `networks` section of the Docker Compose.
+> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container.
 >
 > ```bash
 > docker network create tweakio_network
