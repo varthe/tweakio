@@ -45,7 +45,9 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 	if t == "caps" || (t == "search" && imdbID == "tt") {
 		capsResponse, err := torznab.GenerateCapsResponse(t)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Error generating Torznab response: %v", err), http.StatusInternalServerError)
+			msg := fmt.Sprintf("Error getting Torznab response: %v", err)
+			log.Println(msg)
+			http.Error(w, msg, http.StatusInternalServerError)
 			return
 		}
 		writeResponse(w, capsResponse)
@@ -59,7 +61,9 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 	}
 
 	if imdbID == "" {
-		http.Error(w, "Missing required parameter: imdbid", http.StatusBadRequest)
+		msg := "Missing required paramenter: imdbid"
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -70,7 +74,9 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 
 	results, err := httpClient.FetchFromTorrentio(mediaType, imdbID, season, episode)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error fetching from Torrentio: %v", err), http.StatusInternalServerError)
+		msg := fmt.Sprintf("Error fetching from Torrentio: %v", err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
@@ -84,7 +90,9 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 
 	torznabResponse, err := torznab.ConvertToTorznab(parsedResults, "http://tweakio:3185/api")
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error generating Torznab response: %v", err), http.StatusInternalServerError)
+		msg := fmt.Sprintf("Error generating Torznab response: %v", err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
