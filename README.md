@@ -2,25 +2,35 @@
 
 Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integrate seamlessly with Radarr and Sonarr.
 
-#### ⚠️ Note about file sizes and TMDB
+> [!NOTE]
+>Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
-Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
-
-#### ⚠️ Oracle VPS users will need to route Tweakio through Warp or a VPN
-
+> [!TIP]
+> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container. Then uncomment the `networks` section of the Docker Compose.
+>
+> ```bash
+> docker network create tweakio_network
+> docker network connect tweakio_network prowlarr_container
+> ```
 
 ### Docker Compose
 
 ```yaml
 services:
   tweakio:
-    image: varthe/tweakio:latest
-    container_name: tweakio
-    hostname: tweakio
-    ports:
-      - "3185:3185"
-    volumes:
-      - /opt/tweakio/config.yaml:/app/config.yaml
+  image: varthe/tweakio:latest
+  container_name: tweakio
+  hostname: tweakio
+  ports:
+    - "3185:3185"
+  volumes:
+    - /opt/tweakio/config.yaml:/app/config.yaml
+  networks:
+    - tweakio_network
+
+networks:
+  tweakio_network:
+    external: true
 ```
 
 ### Config.yaml
@@ -36,10 +46,13 @@ tmdb:
 ```
 
 ### Prowlarr Integration
+> [!WARNING]
+> Oracle VPS users will need to route Tweakio through Warp or a VPN
 
-1. 🚨 Ensure that Tweakio and Prowlarr are on the **same docker network** 🚨
-2. Click on **Add Indexer**
-3. Search for **Generic Torznab** and click it
-4. Change **Name** to `Tweakio`
-5. Set **Url** to `http://tweakio:3185`
-6. Click **Test** and **Save**
+In Prowlarr:
+
+1. Click on **Add Indexer**
+2. Search for **Generic Torznab** and click it
+3. Change **Name** to `Tweakio`
+4. Set **Url** to `http://tweakio:3185`
+5. Click **Test** and **Save**
