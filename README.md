@@ -20,7 +20,6 @@ services:
   tweakio:
   image: varthe/tweakio:latest
   container_name: tweakio
-  hostname: tweakio
   ports:
     - "3185:3185"
   volumes:
