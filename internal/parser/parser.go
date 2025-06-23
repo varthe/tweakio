@@ -7,6 +7,7 @@ import (
 	"strings"
 	"tweakio/internal/api"
 	"tweakio/internal/cache"
+	"tweakio/internal/logger"
 )
 
 var Regexes *RegexPatterns
@@ -110,7 +111,10 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
 		} else {
-			seasonEpisodes := httpClient.FetchEpisodesFromTMDB(imdbID, i)
+			seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
+			if err != nil {
+				logger.Error("Error fetching espiodes from TMDB", err)
+			}
 			episodeCache.Set(imdbID, i, seasonEpisodes)
 			episodes += seasonEpisodes
 		}
