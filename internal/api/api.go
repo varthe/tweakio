@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -79,12 +80,12 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 
 	var result map[string]any
 	if err := fetchJSON(c.Client, url.String(), &result); err != nil {
-		return nil, fmt.Errorf("failed to fetch from Torrentio: %w", err)
+		return nil, fmt.Errorf("failed to fetch: %w", err)
 	}
 
 	streams, ok := result["streams"].([]any)
 	if !ok {
-		return nil, fmt.Errorf("failed to parse streams from Torrentio")
+		return nil, errors.New("failed to parse streams")
 	}
 
 	return streams, nil
@@ -94,7 +95,7 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 	url := fmt.Sprintf("%s/find/%s?api_key=%s&external_source=imdb_id", c.TMDBBaseURL, imdbID, c.TMDBAPIKey)
 	var result map[string]any
 	if err := fetchJSON(c.Client, url, &result); err != nil {
-		return "", fmt.Errorf("failed to fetch ID from TMDB: %w", err)
+		return "", fmt.Errorf("failed to fetch TMDB ID: %w", err)
 	}
 
 	tvResults, ok := result["tv_results"].([]any)
@@ -118,7 +119,7 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int, error) {
 	tmdbID, err := fetchIdFromTMDB(c, imdbID)
 	if err != nil {
-		return 10, fmt.Errorf("failed to get TMDB ID: %w", err)
+		return 10, err
 	}
 
 	url := fmt.Sprintf("%s/tv/%s/season/%d?api_key=%s", c.TMDBBaseURL, tmdbID, seasonNumber, c.TMDBAPIKey)
@@ -130,7 +131,7 @@ func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int,
 
 	episodes, ok := result["episodes"].([]any)
 	if !ok {
-		return 10, fmt.Errorf("failed to get episodes from TMDB response: %w", err)
+		return 10, fmt.Errorf("failed to get episodes from response: %w", err)
 	}
 
 	return len(episodes), nil

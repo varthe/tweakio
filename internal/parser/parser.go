@@ -118,7 +118,7 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 		
 		seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
 		if err != nil {
-			logger.Error("Error fetching espiodes from TMDB", err)
+			logger.Error("Error fetching episodes from TMDB", err)
 		}
 		episodeCache.Set(imdbID, i, seasonEpisodes)
 		episodes += seasonEpisodes

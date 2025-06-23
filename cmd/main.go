@@ -94,7 +94,7 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 
 	torznabResponse, err := torznab.ConvertToTorznab(parsedResults, "http://tweakio:3185/api")
 	if err != nil {
-		sendError(w, "Error generating Torznab response", err)
+		sendError(w, "Error converting results to Torznab", err)
 		return
 	}
 
