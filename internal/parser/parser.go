@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"fmt"
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -59,17 +59,15 @@ func CompileRegex() error {
 	return nil
 }
 
-func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) *TorrentioResult {
-	parsedResult, ok := result.(map[string]interface{})
+func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) (*TorrentioResult, error) {
+	parsedResult, ok := result.(map[string]any)
 	if !ok {
-		fmt.Println("Invalid Torrentio result format")
-		return nil
+		return nil, errors.New("invalid result format")
 	}
 
 	title, ok := parsedResult["title"].(string)
 	if !ok {
-		fmt.Println("Missing title from Torrentio result")
-		return nil
+		return nil, errors.New("missing title from result")
 	}
 
 	cleanTitle := GetCleanTitle(title)
@@ -84,25 +82,25 @@ func ParseResult(result interface{}, mediaType, imdbID string, httpClient *api.A
 
 	if mediaType != "tvsearch" {
 		torrentioResult.Category = 2000
-		return torrentioResult
+		return torrentioResult, nil
 	}
 
 	if start, end, found := GetSeasonRange(cleanTitle); found {
 		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
-		return torrentioResult
+		return torrentioResult, nil
 	}
 	if season, found := GetSeasonNumber(cleanTitle); found {
 		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
-		return torrentioResult
+		return torrentioResult, nil
 	}
 	if start, end, found := GetEpisodeRange(cleanTitle); found {
 		episodes := end - start + 1
 		torrentioResult.Size *= float64(episodes)
-		return torrentioResult
+		return torrentioResult, nil
 	}
-	return torrentioResult
+	return torrentioResult, nil
 }
 
 func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {

@@ -80,8 +80,10 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 
 	var parsedResults []parser.TorrentioResult
 	for _, result := range results {
-		torrentioResult := parser.ParseResult(result, t, imdbID, httpClient, episodeCache)
-		if torrentioResult != nil {
+		torrentioResult, err := parser.ParseResult(result, t, imdbID, httpClient, episodeCache)
+		if err != nil {
+			logger.Error("Error parsing result from Torrentio", err)
+		} else {
 			parsedResults = append(parsedResults, *torrentioResult)
 		}
 	}
