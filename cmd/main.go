@@ -18,13 +18,17 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to load config", err)
 	}
-
+ 
 	if err := parser.CompileRegex(); err != nil {
 		logger.Fatal("Failed to compile regex", err)
 	}
 
 	httpClient := api.NewAPIClient(cfg.Torrentio.BaseURL, cfg.Torrentio.Options, cfg.TMDB.APIKey)
-	episodeCache := cache.CreateEpisodeCache(cfg.TMDB.CacheSize)
+
+	var episodeCache *cache.EpisodeCache
+	if cfg.TMDB.APIKey != "" {
+		episodeCache = cache.CreateEpisodeCache(cfg.TMDB.CacheSize)
+	}
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		handleProwlarrRequest(w, r, httpClient, episodeCache)

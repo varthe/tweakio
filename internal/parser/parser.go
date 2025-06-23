@@ -106,16 +106,22 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {
 	episodes := 0
 	for i := start; i <= end; i++ {
+		if episodeCache == nil {
+			episodes += 10
+			continue
+		}
+		
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
-		} else {
-			seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
-			if err != nil {
-				logger.Error("Error fetching espiodes from TMDB", err)
-			}
-			episodeCache.Set(imdbID, i, seasonEpisodes)
-			episodes += seasonEpisodes
+			continue
+		} 
+		
+		seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
+		if err != nil {
+			logger.Error("Error fetching espiodes from TMDB", err)
 		}
+		episodeCache.Set(imdbID, i, seasonEpisodes)
+		episodes += seasonEpisodes
 	}
 	return episodes
 }

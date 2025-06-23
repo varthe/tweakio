@@ -116,10 +116,6 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 }
 
 func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int, error) {
-	if c.TMDBAPIKey == "" {
-		return 10, nil
-	}
-
 	tmdbID, err := fetchIdFromTMDB(c, imdbID)
 	if err != nil {
 		return 10, fmt.Errorf("failed to get TMDB ID: %w", err)
