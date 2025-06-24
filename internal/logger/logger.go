@@ -10,15 +10,12 @@ func timestamp() string {
 	return time.Now().Format("2006-01-02 15:04:05")
 }
 
-func Info(msg string) {
-	fmt.Fprintf(os.Stdout, "%s [INFO] %s\n", timestamp(), msg)
+func Info(source, message string, args ...any) {
+	msg := fmt.Sprintf(message, args...)
+	fmt.Fprintf(os.Stdout, "%s [%s] %s\n", timestamp(), source, msg)
 }
 
-func Error(msg string, err error) {
-	fmt.Fprintf(os.Stderr, "%s [ERROR] %s: %v\n", timestamp(), msg, err)
-}
-
-func Fatal(msg string, err error) {
-	fmt.Fprintf(os.Stderr, "%s [FATAL] %s: %v\n", timestamp(), msg, err)
-	os.Exit(1)
+func Error(source, message string, args ...any) {
+	msg := fmt.Sprintf(message, args...)
+	fmt.Fprintf(os.Stderr, "%s [%s] ❌ %s\n", timestamp(), source, msg)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"tweakio/internal/logger"
 
 	"gopkg.in/yaml.v3"
 )
@@ -29,6 +30,8 @@ func LoadConfig(path string) (*Config, error) {
 		}
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
+
+	logger.Info("TWEAKIO", "⚠️  Config file is deprecated. Use the updated Docker Compose at: https://github.com/varthe/tweakio")
 
 	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {

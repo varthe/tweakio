@@ -86,7 +86,7 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 
 	output, err := xml.MarshalIndent(response, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("failed to generate Torznab XML: %w", err)
+		return "", fmt.Errorf("failed to generate XML: %w", err)
 	}
 
 	return xml.Header + string(output), nil

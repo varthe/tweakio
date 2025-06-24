@@ -76,16 +76,16 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 
 	fmt.Fprintf(&url, ".json")
 
-	logger.Info("Fetching from Torrentio: "  + url.String())
+	logger.Info("TORRENTIO", "Fetching results from: %s", url.String())
 
 	var result map[string]any
 	if err := fetchJSON(c.Client, url.String(), &result); err != nil {
-		return nil, fmt.Errorf("failed to fetch: %w", err)
+		return nil, err
 	}
 
 	streams, ok := result["streams"].([]any)
 	if !ok {
-		return nil, errors.New("failed to parse streams")
+		return nil, errors.New("invalid result structure")
 	}
 
 	return streams, nil
@@ -117,6 +117,8 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 }
 
 func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int, error) {
+	logger.Info("TMDB", "Fetching episode count for season %d", seasonNumber)
+
 	tmdbID, err := fetchIdFromTMDB(c, imdbID)
 	if err != nil {
 		return 10, err
