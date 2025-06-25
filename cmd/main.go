@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 	"tweakio/config"
 	"tweakio/internal/api"
 	"tweakio/internal/cache"
@@ -45,33 +47,35 @@ func main() {
 func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) {
 	query := r.URL.Query()
 	t := query.Get("t")
-	imdbID := "tt" + query.Get("imdbid")
+	imdbID := query.Get("imdbid")
 	season, _ := strconv.Atoi(query.Get("season"))
 	episode, _ := strconv.Atoi(query.Get("ep"))
 
 	logger.Info("TWEAKIO", "Received request: type=%s, imdbID=%s, season=%d, episode=%d", t, imdbID, season, episode)
 
-	if t == "caps" || (t == "search" && imdbID == "tt") {
-		capsResponse, err := torznab.GenerateCapsResponse(t)
-		if err != nil {
-			logger.Error("TWEAKIO", "Error generating caps response: %v", err)
-			sendError(w)
-			return
-		}
-		sendResponse(w, capsResponse)
+	if t == "rss" {
+		sendResponse(w, torznab.RssResponse())
 		return
 	}
 
-	if t == "rss" {
-		emptyRSS := `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel></channel></rss>`
-		sendResponse(w, emptyRSS)
+	if t == "caps" {
+		sendResponse(w, torznab.CapsResponse())
 		return
 	}
 
 	if imdbID == "" {
-		logger.Error("TWEAKIO", "Missing required paramater: imdbID")
-		sendError(w)
+		fakeResults, err := torznab.GenerateFakeResults()
+		if err != nil {
+			logger.Error("TWEAKIO", "Error generating placeholder results: %v", err)
+			sendError(w)
+			return
+		}
+		sendResponse(w, fakeResults)
 		return
+	}
+
+	if !strings.HasPrefix(imdbID, "tt") {
+		imdbID = "tt" + imdbID
 	}
 
 	mediaType := "movie"
@@ -86,7 +90,7 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 		return
 	}
 
-	logger.Info("TWEAKIO", "Processing results...")
+	parseStart := time.Now()
 
 	var parsedResults []parser.TorrentioResult
 	for _, result := range results {
@@ -105,7 +109,8 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 		return
 	}
 
-	logger.Info("TWEAKIO", "Finished processing results")
+	parseDuration := time.Since(parseStart).Seconds()
+	logger.Info("TWEAKIO", "Processed %d results in %f sec", len(parsedResults), parseDuration)
 
 	sendResponse(w, torznabResponse)
 }
