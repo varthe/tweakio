@@ -49,7 +49,7 @@ services:
     image: varthe/tweakio:latest
     container_name: tweakio
     environment:
-      - TMDB_API_KEY="" # Optional but recommended for best results
+      TMDB_API_KEY: "" # Optional but recommended for best results
     ports:
       - "3185:3185"
     networks:
