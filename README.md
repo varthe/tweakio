@@ -18,14 +18,14 @@ Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integra
 ```yaml
 services:
   tweakio:
-  image: varthe/tweakio:latest
-  container_name: tweakio
-  ports:
-    - "3185:3185"
-  volumes:
-    - /opt/tweakio/config.yaml:/app/config.yaml
-  networks:
-    - tweakio_network
+    image: varthe/tweakio:latest
+    container_name: tweakio
+    ports:
+      - "3185:3185"
+    volumes:
+      - /opt/tweakio/config.yaml:/app/config.yaml
+    networks:
+      - tweakio_network
 
 networks:
   tweakio_network:
