@@ -97,7 +97,7 @@ func GenerateFakeResults() (string, error) {
 		Title:    "No results! Make sure to use the IMDb ID to search",
 		InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
 		Size:     2.5,
-		Peers:    100,
+		Peers:    0,
 		Category: 2000,
 		Source:   "FakeIndexer",
 	}
@@ -105,7 +105,7 @@ func GenerateFakeResults() (string, error) {
 		Title:    "No results! Make sure to use the IMDb ID to search",
 		InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
 		Size:     2.5,
-		Peers:    100,
+		Peers:    0,
 		Category: 5000,
 		Source:   "FakeIndexer",
 	}
