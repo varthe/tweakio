@@ -86,34 +86,38 @@ func ConvertToTorznab(results []parser.TorrentioResult, baseURL string) (string,
 
 	output, err := xml.MarshalIndent(response, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("failed to generate Torznab XML: %w", err)
+		return "", fmt.Errorf("failed to generate XML: %w", err)
 	}
 
 	return xml.Header + string(output), nil
 }
 
-func GenerateCapsResponse(t string) (string, error) {
-	if t == "search" || t == "tvsearch" {
-		fakeMovie := parser.TorrentioResult{
-			Title:    "No results! Make sure to use the IMDb ID to search",
-			InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
-			Size:     2.5,
-			Peers:    100,
-			Category: 2000,
-			Source:   "FakeIndexer",
-		}
-		fakeShow := parser.TorrentioResult{
-			Title:    "No results! Make sure to use the IMDb ID to search",
-			InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
-			Size:     2.5,
-			Peers:    100,
-			Category: 5000,
-			Source:   "FakeIndexer",
-		}
-		return ConvertToTorznab([]parser.TorrentioResult{fakeMovie, fakeShow}, "http://tweakio:3185/api")
+func GenerateFakeResults() (string, error) {
+	fakeMovie := parser.TorrentioResult{
+		Title:    "No results! Make sure to use the IMDb ID to search",
+		InfoHash: "b13d60bd404b65c7484115aa863c8341a8092f55",
+		Size:     2.5,
+		Peers:    0,
+		Category: 2000,
+		Source:   "FakeIndexer",
 	}
+	fakeShow := parser.TorrentioResult{
+		Title:    "No results! Make sure to use the IMDb ID to search",
+		InfoHash: "b13d60bd404b64c7484115aa863c8341a8092f55",
+		Size:     2.5,
+		Peers:    0,
+		Category: 5000,
+		Source:   "FakeIndexer",
+	}
+	return ConvertToTorznab([]parser.TorrentioResult{fakeMovie, fakeShow}, "http://tweakio:3185/api")
+}
 
-	capsXML := `<?xml version="1.0" encoding="UTF-8"?>
+func RssResponse() string {
+	return `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel></channel></rss>`
+}
+
+func CapsResponse() string {
+	return `<?xml version="1.0" encoding="UTF-8"?>
 	<caps>
 		<server version="1.0" title="Tweakio"/>
 		<limits max="100" default="50"/>
@@ -136,6 +140,4 @@ func GenerateCapsResponse(t string) (string, error) {
 			</category>
 		</categories>
 	</caps>`
-
-	return capsXML, nil
 }

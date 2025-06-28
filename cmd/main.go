@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
+	"time"
 	"tweakio/config"
 	"tweakio/internal/api"
 	"tweakio/internal/cache"
+	"tweakio/internal/logger"
 	"tweakio/internal/parser"
 	"tweakio/internal/torznab"
 )
@@ -15,56 +17,65 @@ import (
 func main() {
 	cfg, err := config.LoadConfig("./config.yaml")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		logger.Error("TWEAKIO", "Failed to load config: %v", err)
+		os.Exit(1)
 	}
-
+ 
 	if err := parser.CompileRegex(); err != nil {
-		log.Fatalf("Failed to compile regex: %v", err)
+		logger.Error("TWEAKIO", "Failed to compile regex: %v", err)
+		os.Exit(1)
 	}
 
 	httpClient := api.NewAPIClient(cfg.Torrentio.BaseURL, cfg.Torrentio.Options, cfg.TMDB.APIKey)
-	episodeCache := cache.CreateEpisodeCache(cfg.TMDB.CacheSize)
+
+	var episodeCache *cache.EpisodeCache
+	if cfg.TMDB.APIKey != "" {
+		episodeCache = cache.CreateEpisodeCache(cfg.TMDB.CacheSize)
+	}
 
 	http.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) {
 		handleProwlarrRequest(w, r, httpClient, episodeCache)
 	})
 
-	log.Println("Tweakio is running on :3185")
-	log.Fatal(http.ListenAndServe(":3185", nil))
+	logger.Info("TWEAKIO", "Running on port 3185")
+	if err := http.ListenAndServe(":3185", nil); err != nil {
+		logger.Error("TWEAKIO", "Failed to start: %v", err)
+
+	}
 }
 
 func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) {
 	query := r.URL.Query()
 	t := query.Get("t")
-	imdbID := "tt" + query.Get("imdbid")
+	imdbID := query.Get("imdbid")
 	season, _ := strconv.Atoi(query.Get("season"))
 	episode, _ := strconv.Atoi(query.Get("ep"))
 
-	log.Printf("Incoming request: t=%s, imdbID=%s, season=%d, episode=%d\n", t, imdbID, season, episode)
+	logger.Info("TWEAKIO", "Received request: type=%s, imdbID=%s, season=%d, episode=%d", t, imdbID, season, episode)
 
-	if t == "caps" || (t == "search" && imdbID == "tt") {
-		capsResponse, err := torznab.GenerateCapsResponse(t)
-		if err != nil {
-			msg := fmt.Sprintf("Error getting Torznab response: %v", err)
-			log.Println(msg)
-			http.Error(w, msg, http.StatusInternalServerError)
-			return
-		}
-		writeResponse(w, capsResponse)
+	if t == "rss" {
+		sendResponse(w, torznab.RssResponse())
 		return
 	}
 
-	if t == "rss" {
-		emptyRSS := `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel></channel></rss>`
-		writeResponse(w, emptyRSS)
+	if t == "caps" {
+		sendResponse(w, torznab.CapsResponse())
 		return
 	}
 
 	if imdbID == "" {
-		msg := "Missing required paramenter: imdbid"
-		log.Println(msg)
-		http.Error(w, msg, http.StatusBadRequest)
+		fakeResults, err := torznab.GenerateFakeResults()
+		if err != nil {
+			logger.Error("TWEAKIO", "Error generating placeholder results: %v", err)
+			sendError(w)
+			return
+		}
+		sendResponse(w, fakeResults)
 		return
+	}
+
+	if !strings.HasPrefix(imdbID, "tt") {
+		imdbID = "tt" + imdbID
 	}
 
 	mediaType := "movie"
@@ -74,36 +85,45 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 
 	results, err := httpClient.FetchFromTorrentio(mediaType, imdbID, season, episode)
 	if err != nil {
-		msg := fmt.Sprintf("Error fetching from Torrentio: %v", err)
-		log.Println(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
+		logger.Error("TORRENTIO", "Error fetching results: %v", err)
+		sendError(w)
 		return
 	}
 
+	parseStart := time.Now()
+
 	var parsedResults []parser.TorrentioResult
 	for _, result := range results {
-		torrentioResult := parser.ParseResult(result, t, imdbID, httpClient, episodeCache)
-		if torrentioResult != nil {
+		torrentioResult, err := parser.ParseResult(result, t, imdbID, httpClient, episodeCache)
+		if err != nil {
+			logger.Error("TORRENTIO", "Error parsing result: %v", err)
+		} else {
 			parsedResults = append(parsedResults, *torrentioResult)
 		}
 	}
 
 	torznabResponse, err := torznab.ConvertToTorznab(parsedResults, "http://tweakio:3185/api")
 	if err != nil {
-		msg := fmt.Sprintf("Error generating Torznab response: %v", err)
-		log.Println(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
+		logger.Error("TWEAKIO", "Error convertng results to Torznab: %v", err)
+		sendError(w)
 		return
 	}
 
-	writeResponse(w, torznabResponse)
+	parseDuration := time.Since(parseStart).Seconds()
+	logger.Info("TWEAKIO", "Processed %d results in %f sec", len(parsedResults), parseDuration)
+
+	sendResponse(w, torznabResponse)
 }
 
-func writeResponse(w http.ResponseWriter, response string) {
+func sendResponse(w http.ResponseWriter, response string) {
 	w.Header().Set("Content-Type", "application/xml")
 	w.WriteHeader(http.StatusOK)
 	_, err := w.Write([]byte(response))
 	if err != nil {
-		log.Printf("Error writing response: %v", err)
+		logger.Error("TWEAKIO", "Error writing response: %v", err)
 	}
+}
+
+func sendError(w http.ResponseWriter) {
+	http.Error(w, "Internal server error", http.StatusInternalServerError)
 }

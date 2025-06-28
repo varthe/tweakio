@@ -3,7 +3,7 @@
 Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integrate seamlessly with Radarr and Sonarr.
 
 > [!NOTE]
->Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
+> Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
 > [!TIP]
 > If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container.
@@ -15,15 +15,43 @@ Tweakio makes Torrentio usable as an indexer in Prowlarr, allowing it to integra
 
 ### Docker Compose
 
+<details>
+<summary>Advanced Configuration</summary>
+These environment variables add optional overrides:
+
+- **`TMDB_API_KEY`**  
+  Used to fetch accurate episode counts from TMDB.  
+  If unset, Tweakio assumes 10 episodes per season for size estimates.  
+  Default: _(empty)_
+
+- **`TMDB_CACHE_SIZE`**  
+  Max number of episode count results to cache from TMDB.  
+  Default: `1000`
+
+- **`TORRENTIO_BASE_URL`**  
+  Overrides the base URL used for Torrentio requests.  
+  Default: `https://torrentio.strem.fun/`
+
+- **`TORRENTIO_OPTIONS`**  
+   Overrides providers and filtering options used by Torrentio.
+  Default:
+  ```
+  providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,
+  torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex
+  |sort=qualitysize|qualityfilter=scr,cam
+  ```
+  <br>
+  </details>
+
 ```yaml
 services:
   tweakio:
     image: varthe/tweakio:latest
     container_name: tweakio
+    environment:
+      TMDB_API_KEY: "" # Optional but recommended for best results
     ports:
       - "3185:3185"
-    volumes:
-      - /opt/tweakio/config.yaml:/app/config.yaml
     networks:
       - tweakio_network
 
@@ -32,21 +60,7 @@ networks:
     external: true
 ```
 
-### Config.yaml
-
-```yaml
-torrentio:
-  base_url: https://torrentio.strem.fun/
-  options: "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=qualitysize|qualityfilter=scr,cam"
-
-tmdb:
-  api_key: "" # If empty, defaults to 10 episodes for everything
-  cache_size: 1000
-```
-
 ### Prowlarr Integration
-> [!WARNING]
-> Oracle VPS users will need to route Tweakio through Warp or a VPN
 
 In Prowlarr:
 
