@@ -40,6 +40,10 @@ These environment variables add optional overrides:
   torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex
   |sort=qualitysize|qualityfilter=scr,cam
   ```
+
+- **`DEBUG`**  
+  Enable detailed debug logging when set to `true`.  
+  Default: `false`
   <br>
   </details>
 
@@ -50,6 +54,7 @@ services:
     container_name: tweakio
     environment:
       TMDB_API_KEY: "" # Optional but recommended for best results
+      DEBUG: "false"
     ports:
       - "3185:3185"
     networks:
