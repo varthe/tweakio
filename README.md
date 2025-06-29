@@ -21,9 +21,9 @@ These environment variables add optional overrides:
 
 - **`TMDB_API_KEY`**  
   Used to fetch accurate episode counts from TMDB.  
-  If unset, Tweakio assumes 10 episodes per season for size estimates.
-  Can be found at https://www.themoviedb.org/settings/api
-  You can use either API Read Access Token or API Key
+  If unset, Tweakio assumes 10 episodes per season for size estimates.  
+  Can be found at https://www.themoviedb.org/settings/api  
+  You can use either API Read Access Token (V4) or API Key (V3).  
   Default: _(empty)_
 
 - **`TMDB_CACHE_SIZE`**  
