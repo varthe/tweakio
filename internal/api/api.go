@@ -40,8 +40,17 @@ func (u *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return u.transport.RoundTrip(req)
 }
 
-func fetchJSON(httpClient *http.Client, url string, result interface{}) error {
-	resp, err := httpClient.Get(url)
+func fetchJSON(httpClient *http.Client, url string, apiKey string, result interface{}) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for URL %s: %w", url, err)
+	}
+
+	if apiKey != "" && strings.HasPrefix(apiKey, "eyJ") {
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+	}
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to fetch from URL %s: %w", url, err)
 	}
@@ -79,7 +88,7 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 	logger.Info("TORRENTIO", "Fetching results from: %s", url.String())
 
 	var result map[string]any
-	if err := fetchJSON(c.Client, url.String(), &result); err != nil {
+	if err := fetchJSON(c.Client, url.String(), "", &result); err != nil {
 		return nil, err
 	}
 
@@ -92,9 +101,13 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 }
 
 func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
-	url := fmt.Sprintf("%s/find/%s?api_key=%s&external_source=imdb_id", c.TMDBBaseURL, imdbID, c.TMDBAPIKey)
+	baseUrl := fmt.Sprintf("%s/find/%s?external_source=imdb_id", c.TMDBBaseURL, imdbID)
+	if !strings.HasPrefix(c.TMDBAPIKey, "eyJ") {
+		baseUrl = fmt.Sprintf("%s&api_key=%s", baseUrl, c.TMDBAPIKey)
+	}
+
 	var result map[string]any
-	if err := fetchJSON(c.Client, url, &result); err != nil {
+	if err := fetchJSON(c.Client, baseUrl, c.TMDBAPIKey, &result); err != nil {
 		return "", fmt.Errorf("failed to fetch TMDB ID: %w", err)
 	}
 
@@ -116,25 +129,58 @@ func fetchIdFromTMDB(c *APIClient, imdbID string) (string, error) {
 	return strconv.FormatFloat(tmdbID, 'f', 0, 64), nil
 }
 
+func (c *APIClient) FetchTVShowDetails(imdbID string) (map[string]any, error) {
+	logger.Info("TMDB", "Fetching TV show details")
+
+	tmdbID, err := fetchIdFromTMDB(c, imdbID)
+	if err != nil {
+		return nil, err
+	}
+
+	baseUrl := fmt.Sprintf("%s/tv/%s", c.TMDBBaseURL, tmdbID)
+	if !strings.HasPrefix(c.TMDBAPIKey, "eyJ") {
+		baseUrl = fmt.Sprintf("%s?api_key=%s", baseUrl, c.TMDBAPIKey)
+	}
+
+	var result map[string]any
+	if err := fetchJSON(c.Client, baseUrl, c.TMDBAPIKey, &result); err != nil {
+		return nil, fmt.Errorf("failed to fetch TV show details: %w", err)
+	}
+
+	return result, nil
+}
+
 func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int, error) {
 	logger.Info("TMDB", "Fetching episode count for season %d", seasonNumber)
 
-	tmdbID, err := fetchIdFromTMDB(c, imdbID)
+	result, err := c.FetchTVShowDetails(imdbID)
 	if err != nil {
 		return 10, err
 	}
 
-	url := fmt.Sprintf("%s/tv/%s/season/%d?api_key=%s", c.TMDBBaseURL, tmdbID, seasonNumber, c.TMDBAPIKey)
-
-	var result map[string]any
-	if err := fetchJSON(c.Client, url, &result); err != nil {
-		return 10, fmt.Errorf("failed to fetch episode count for season %d: %w", seasonNumber, err)
-	}
-
-	episodes, ok := result["episodes"].([]any)
+	seasons, ok := result["seasons"].([]any)
 	if !ok {
-		return 10, fmt.Errorf("failed to get episodes from response: %w", err)
+		return 10, fmt.Errorf("failed to get seasons from response")
 	}
 
-	return len(episodes), nil
+	for _, season := range seasons {
+		seasonData, ok := season.(map[string]any)
+		if !ok {
+			continue
+		}
+
+		seasonNum, ok := seasonData["season_number"].(float64)
+		if !ok || int(seasonNum) != seasonNumber {
+			continue
+		}
+
+		episodeCount, ok := seasonData["episode_count"].(float64)
+		if !ok {
+			return 10, fmt.Errorf("failed to get episode count for season %d", seasonNumber)
+		}
+
+		return int(episodeCount), nil
+	}
+
+	return 10, fmt.Errorf("season %d not found", seasonNumber)
 }

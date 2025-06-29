@@ -119,24 +119,71 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 
 func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {
 	episodes := 0
-	for i := start; i <= end; i++ {
-		if episodeCache == nil {
-			episodes += 10
-			continue
-		}
 
+	if episodeCache == nil {
+		return 10 * (end - start + 1)
+	}
+
+	allInCache := true
+	missingSeasons := make([]int, 0)
+
+	for i := start; i <= end; i++ {
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
-			continue
+		} else {
+			allInCache = false
+			missingSeasons = append(missingSeasons, i)
+		}
+	}
+
+	if allInCache {
+		return episodes
+	}
+
+	tvDetails, err := httpClient.FetchTVShowDetails(imdbID)
+	if err != nil {
+		logger.Error("TMDB", "Error fetching TV show details from TMDB: %v", err)
+		return episodes + (10 * len(missingSeasons))
+	}
+
+	seasons, ok := tvDetails["seasons"].([]any)
+	if !ok {
+		logger.Error("TMDB", "Failed to get seasons from response")
+		return episodes + (10 * len(missingSeasons))
+	}
+
+	for _, seasonNum := range missingSeasons {
+		found := false
+
+		for _, season := range seasons {
+			seasonData, ok := season.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			num, ok := seasonData["season_number"].(float64)
+			if !ok || int(num) != seasonNum {
+				continue
+			}
+
+			episodeCount, ok := seasonData["episode_count"].(float64)
+			if !ok {
+				continue
+			}
+
+			seasonEpisodes := int(episodeCount)
+			episodeCache.Set(imdbID, seasonNum, seasonEpisodes)
+			episodes += seasonEpisodes
+			found = true
+			break
 		}
 
-		seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
-		if err != nil {
-			logger.Error("TMDB", "Error fetching episodes from TMDB: %v", err)
+		if !found {
+			episodeCache.Set(imdbID, seasonNum, 10)
+			episodes += 10
 		}
-		episodeCache.Set(imdbID, i, seasonEpisodes)
-		episodes += seasonEpisodes
 	}
+
 	return episodes
 }
 

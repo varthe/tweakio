@@ -21,7 +21,9 @@ These environment variables add optional overrides:
 
 - **`TMDB_API_KEY`**  
   Used to fetch accurate episode counts from TMDB.  
-  If unset, Tweakio assumes 10 episodes per season for size estimates.  
+  If unset, Tweakio assumes 10 episodes per season for size estimates.
+  Can be found at https://www.themoviedb.org/settings/api
+  You can use either API Read Access Token or API Key
   Default: _(empty)_
 
 - **`TMDB_CACHE_SIZE`**  
@@ -35,6 +37,7 @@ These environment variables add optional overrides:
 - **`TORRENTIO_OPTIONS`**  
    Overrides providers and filtering options used by Torrentio.
   Default:
+
   ```
   providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,
   torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex
