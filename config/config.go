@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"tweakio/internal/logger"
 
 	"gopkg.in/yaml.v3"
@@ -41,20 +42,18 @@ func LoadConfig(path string) (*Config, error) {
 	return &config, nil
 }
 
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 func loadFromEnv() (*Config, error) {
-	var config Config
+	config := &Config{}
 
-	if baseUrl := os.Getenv("TORRENTIO_BASE_URL"); baseUrl != "" {
-		config.Torrentio.BaseURL = baseUrl
-	} else {
-		config.Torrentio.BaseURL = "https://torrentio.strem.fun/"
-	}
-
-	if options := os.Getenv("TORRENTIO_OPTIONS"); options != "" {
-		config.Torrentio.Options = options
-	} else {
-		config.Torrentio.Options = "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=qualitysize|qualityfilter=scr,cam"
-	}
+	config.Torrentio.BaseURL = getEnv("TORRENTIO_BASE_URL", "https://torrentio.strem.fun/")
+	config.Torrentio.Options = getEnv("TORRENTIO_OPTIONS", "providers=yts,eztv,rarbg,1337x,thepiratebay,kickasstorrents,torrentgalaxy,magnetdl,horriblesubs,nyaasi,tokyotosho,anidex|sort=qualitysize|qualityfilter=scr,cam")
 
 	if key := os.Getenv("TMDB_API_KEY"); key != "" {
 		config.TMDB.APIKey = key
@@ -70,5 +69,7 @@ func loadFromEnv() (*Config, error) {
 		}
 	}
 
-	return &config, nil
+	logger.DebugEnabled = strings.ToLower(os.Getenv("DEBUG")) == "true"
+
+	return config, nil
 }
