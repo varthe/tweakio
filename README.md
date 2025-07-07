@@ -57,7 +57,7 @@ services:
     container_name: tweakio
     environment:
       TMDB_API_KEY: "" # Optional but recommended for best results
-      DEBUG: "false"
+      DEBUG: false
     ports:
       - "3185:3185"
     networks:
