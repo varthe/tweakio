@@ -39,10 +39,10 @@ func CompileRegex() error {
 	if regexes.Season, err = regexp.Compile("(?i)\\b(?:season\\s*|s)(\\d{1,2})(?:\\s+(?:complete|full|pack|multi)|\\.[a-z]+)?\\b"); err != nil {
 		return err
 	}
-	if regexes.SeasonRange, err = regexp.Compile("(?i)\\b(?:s(?:eason)?\\s*\\d{1,2}(?:-s?(?:eason)?\\s*\\d{1,2})|s\\d{1,2}e\\d{1,2}-\\d{1,2})\\b"); err != nil {
+	if regexes.SeasonRange, err = regexp.Compile("(?i)\\b(?:s(?:eason)?\\s*(\\d{1,2})(?:-s?(?:eason)?\\s*(\\d{1,2}))|s(\\d{1,2})-s(\\d{1,2}))\\b"); err != nil {
 		return err
 	}
-	if regexes.SingleEpisode, err = regexp.Compile("(?i)\\bs\\d{1,2}e\\d{1,2}\\b"); err != nil {
+	if regexes.SingleEpisode, err = regexp.Compile("(?i)\\bs(\\d{1,2})e(\\d{1,2})\\b"); err != nil {
 		return err
 	}
 	if regexes.EpisodeRange, err = regexp.Compile("\\bS?\\d{1,2}E(\\d{1,3})-(\\d{1,3})\\b"); err != nil {
@@ -70,6 +70,9 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		return nil, errors.New("missing title from result")
 	}
 
+	logger.Debug("PARSER", "Processing result: title=%s, infoHash=%v",
+		title, parsedResult["infoHash"])
+
 	cleanTitle := GetCleanTitle(title)
 
 	torrentioResult := &TorrentioResult{
@@ -85,44 +88,102 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		return torrentioResult, nil
 	}
 
+	if season, episode, found := GetSeasonEpisode(cleanTitle); found {
+		logger.Debug("PARSER", "Found season and episode in title '%s': S%dE%d", cleanTitle, season, episode)
+		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
+		torrentioResult.Size *= float64(episodes)
+		return torrentioResult, nil
+	}
+
 	if start, end, found := GetSeasonRange(cleanTitle); found {
+		logger.Debug("PARSER", "Found season range in title '%s': start=%d, end=%d", cleanTitle, start, end)
 		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
 	if season, found := GetSeasonNumber(cleanTitle); found {
+		logger.Debug("PARSER", "Found season number in title '%s': season=%d", cleanTitle, season)
 		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
 	if start, end, found := GetEpisodeRange(cleanTitle); found {
+		logger.Debug("PARSER", "Found episode range in title '%s': start=%d, end=%d", cleanTitle, start, end)
 		episodes := end - start + 1
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
+	logger.Debug("PARSER", "No season or episode information found in title '%s'", cleanTitle)
 	return torrentioResult, nil
 }
 
 func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {
 	episodes := 0
+
+	if episodeCache == nil {
+		return 10 * (end - start + 1)
+	}
+
+	allInCache := true
+	missingSeasons := make([]int, 0)
+
 	for i := start; i <= end; i++ {
-		if episodeCache == nil {
-			episodes += 10
-			continue
-		}
-		
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
-			continue
-		} 
-		
-		seasonEpisodes, err := httpClient.FetchEpisodesFromTMDB(imdbID, i)
-		if err != nil {
-			logger.Error("TMDB", "Error fetching episodes from TMDB: %v", err)
+		} else {
+			allInCache = false
+			missingSeasons = append(missingSeasons, i)
 		}
-		episodeCache.Set(imdbID, i, seasonEpisodes)
-		episodes += seasonEpisodes
 	}
+
+	if allInCache {
+		return episodes
+	}
+
+	tvDetails, err := httpClient.FetchTVShowDetails(imdbID)
+	if err != nil {
+		logger.Error("TMDB", "Error fetching TV show details from TMDB: %v", err)
+		return episodes + (10 * len(missingSeasons))
+	}
+
+	seasons, ok := tvDetails["seasons"].([]any)
+	if !ok {
+		logger.Error("TMDB", "Failed to get seasons from response")
+		return episodes + (10 * len(missingSeasons))
+	}
+
+	for _, seasonNum := range missingSeasons {
+		found := false
+
+		for _, season := range seasons {
+			seasonData, ok := season.(map[string]any)
+			if !ok {
+				continue
+			}
+
+			num, ok := seasonData["season_number"].(float64)
+			if !ok || int(num) != seasonNum {
+				continue
+			}
+
+			episodeCount, ok := seasonData["episode_count"].(float64)
+			if !ok {
+				continue
+			}
+
+			seasonEpisodes := int(episodeCount)
+			episodeCache.Set(imdbID, seasonNum, seasonEpisodes)
+			episodes += seasonEpisodes
+			found = true
+			break
+		}
+
+		if !found {
+			episodeCache.Set(imdbID, seasonNum, 10)
+			episodes += 10
+		}
+	}
+
 	return episodes
 }
 
@@ -152,10 +213,18 @@ func GetCleanTitle(title string) string {
 }
 
 func GetSeasonRange(title string) (int, int, bool) {
-	if match := Regexes.SeasonRange.FindStringSubmatch(title); len(match) > 2 {
-		start, _ := strconv.Atoi(match[1])
-		end, _ := strconv.Atoi(match[2])
-		return start, end, true
+	if match := Regexes.SeasonRange.FindStringSubmatch(title); len(match) > 0 {
+		if match[1] != "" && match[2] != "" {
+			start, _ := strconv.Atoi(match[1])
+			end, _ := strconv.Atoi(match[2])
+			return start, end, true
+		}
+
+		if match[3] != "" && match[4] != "" {
+			start, _ := strconv.Atoi(match[3])
+			end, _ := strconv.Atoi(match[4])
+			return start, end, true
+		}
 	}
 	return 0, 0, false
 }
@@ -173,6 +242,15 @@ func GetEpisodeRange(title string) (start, end int, found bool) {
 		start, _ = strconv.Atoi(match[1])
 		end, _ = strconv.Atoi(match[2])
 		return start, end, true
+	}
+	return 0, 0, false
+}
+
+func GetSeasonEpisode(title string) (season, episode int, found bool) {
+	if match := Regexes.SingleEpisode.FindStringSubmatch(title); len(match) == 3 {
+		season, _ = strconv.Atoi(match[1])
+		episode, _ = strconv.Atoi(match[2])
+		return season, episode, true
 	}
 	return 0, 0, false
 }
