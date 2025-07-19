@@ -56,7 +56,7 @@ services:
     image: varthe/tweakio:latest
     container_name: tweakio
     environment:
-      TMDB_API_KEY: "" # Optional but recommended for best results
+      TMDB_API_KEY: "" # Optional but recommended for best results. See https://www.themoviedb.org/settings/api
       DEBUG: false
     ports:
       - "3185:3185"
