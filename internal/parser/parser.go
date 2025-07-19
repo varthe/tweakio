@@ -70,8 +70,7 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		return nil, errors.New("missing title from result")
 	}
 
-	logger.Debug("PARSER", "Processing result: title=%s, infoHash=%v",
-		title, parsedResult["infoHash"])
+	logger.Debug("PARSER", "Processing result: title=%s, infoHash=%v", title, parsedResult["infoHash"])
 
 	cleanTitle := GetCleanTitle(title)
 
@@ -94,7 +93,6 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
-
 	if start, end, found := GetSeasonRange(cleanTitle); found {
 		logger.Debug("PARSER", "Found season range in title '%s': start=%d, end=%d", cleanTitle, start, end)
 		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
@@ -113,17 +111,17 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
+
 	logger.Debug("PARSER", "No season or episode information found in title '%s'", cleanTitle)
 	return torrentioResult, nil
 }
 
 func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient, episodeCache *cache.EpisodeCache) int {
-	episodes := 0
-
 	if episodeCache == nil {
 		return 10 * (end - start + 1)
 	}
 
+	episodes := 0
 	allInCache := true
 	missingSeasons := make([]int, 0)
 
@@ -158,16 +156,19 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 		for _, season := range seasons {
 			seasonData, ok := season.(map[string]any)
 			if !ok {
+				logger.Warn("TMDB", "Could not parse season data from response for IMDB ID %s", imdbID)
 				continue
 			}
 
 			num, ok := seasonData["season_number"].(float64)
 			if !ok || int(num) != seasonNum {
+				logger.Warn("TMDB", "Could not find season number in season data for IMDB ID %s", imdbID)
 				continue
 			}
 
 			episodeCount, ok := seasonData["episode_count"].(float64)
 			if !ok {
+				logger.Warn("TMDB", "Could not find episode count for season %d in season data for IMDB ID %s", int(num), imdbID)
 				continue
 			}
 

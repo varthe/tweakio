@@ -17,6 +17,11 @@ func Info(source, message string, args ...any) {
 	fmt.Fprintf(os.Stdout, "%s [%s] %s\n", timestamp(), source, msg)
 }
 
+func Warn(source, message string, args ...any) {
+	msg := fmt.Sprintf(message, args...)
+	fmt.Fprintf(os.Stderr, "%s [%s] ⚠️ %s\n", timestamp(), source, msg)
+}
+
 func Error(source, message string, args ...any) {
 	msg := fmt.Sprintf(message, args...)
 	fmt.Fprintf(os.Stderr, "%s [%s] ❌ %s\n", timestamp(), source, msg)

@@ -40,7 +40,7 @@ func (u *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error
 	return u.transport.RoundTrip(req)
 }
 
-func fetchJSON(httpClient *http.Client, url string, apiKey string, result interface{}) error {
+func fetchJSON(httpClient *http.Client, url string, apiKey string, result any) error {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request for URL %s: %w", url, err)
