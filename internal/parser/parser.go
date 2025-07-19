@@ -3,7 +3,6 @@ package parser
 import (
 	"errors"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"tweakio/internal/api"
@@ -123,30 +122,30 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 	}
 
 	episodes := 0
-	missingSeasons := make([]int, 0)
+	missing := false
 
 	for i := start; i <= end; i++ {
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
 		} else {
-			missingSeasons = append(missingSeasons, i)
+			missing = true
 		}
 	}
 
-	if len(missingSeasons) == 0 {
+	if !missing {
 		return episodes
 	}
 
 	tvDetails, err := httpClient.FetchTVShowDetails(imdbID)
 	if err != nil {
 		logger.Error("TMDB", "Error fetching TV show details from TMDB: %v", err)
-		return episodes + (10 * len(missingSeasons))
+		return 10 * (end - start + 1)
 	}
 
 	seasons, ok := tvDetails["seasons"].([]any)
 	if !ok {
 		logger.Error("TMDB", "Failed to get seasons from response")
-		return episodes + (10 * len(missingSeasons))
+		return 10 * (end - start + 1)
 	}
 
 	for _, season := range seasons {
@@ -163,7 +162,10 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 		}
 		seasonNum := int(seasonNumRaw)
 
-		if !slices.Contains(missingSeasons, seasonNum) {
+		// Rechecking the cache allows us to store all seasons from the API response.
+		// e.g. if start=1 and end=3 but the show has 5 seasons,
+		// we cache them all now to prevent redundant fetches later.
+		if _, exists := episodeCache.Get(imdbID, seasonNum); exists {
 			continue
 		}
 
