@@ -149,38 +149,3 @@ func (c *APIClient) FetchTVShowDetails(imdbID string) (map[string]any, error) {
 
 	return result, nil
 }
-
-func (c *APIClient) FetchEpisodesFromTMDB(imdbID string, seasonNumber int) (int, error) {
-	logger.Info("TMDB", "Fetching episode count for season %d", seasonNumber)
-
-	result, err := c.FetchTVShowDetails(imdbID)
-	if err != nil {
-		return 10, err
-	}
-
-	seasons, ok := result["seasons"].([]any)
-	if !ok {
-		return 10, fmt.Errorf("failed to get seasons from response")
-	}
-
-	for _, season := range seasons {
-		seasonData, ok := season.(map[string]any)
-		if !ok {
-			continue
-		}
-
-		seasonNum, ok := seasonData["season_number"].(float64)
-		if !ok || int(seasonNum) != seasonNumber {
-			continue
-		}
-
-		episodeCount, ok := seasonData["episode_count"].(float64)
-		if !ok {
-			return 10, fmt.Errorf("failed to get episode count for season %d", seasonNumber)
-		}
-
-		return int(episodeCount), nil
-	}
-
-	return 10, fmt.Errorf("season %d not found", seasonNumber)
-}
