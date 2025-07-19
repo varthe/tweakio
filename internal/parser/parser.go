@@ -3,6 +3,7 @@ package parser
 import (
 	"errors"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"tweakio/internal/api"
@@ -122,19 +123,17 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 	}
 
 	episodes := 0
-	allInCache := true
 	missingSeasons := make([]int, 0)
 
 	for i := start; i <= end; i++ {
 		if seasonEpisodes, exists := episodeCache.Get(imdbID, i); exists {
 			episodes += seasonEpisodes
 		} else {
-			allInCache = false
 			missingSeasons = append(missingSeasons, i)
 		}
 	}
 
-	if allInCache {
+	if len(missingSeasons) == 0 {
 		return episodes
 	}
 
@@ -150,39 +149,33 @@ func GetOrFetchEpisodes(imdbID string, start, end int, httpClient *api.APIClient
 		return episodes + (10 * len(missingSeasons))
 	}
 
-	for _, seasonNum := range missingSeasons {
-		found := false
-
-		for _, season := range seasons {
-			seasonData, ok := season.(map[string]any)
-			if !ok {
-				logger.Warn("TMDB", "Could not parse season data from response for IMDB ID %s", imdbID)
-				continue
-			}
-
-			num, ok := seasonData["season_number"].(float64)
-			if !ok || int(num) != seasonNum {
-				logger.Warn("TMDB", "Could not find season number in season data for IMDB ID %s", imdbID)
-				continue
-			}
-
-			episodeCount, ok := seasonData["episode_count"].(float64)
-			if !ok {
-				logger.Warn("TMDB", "Could not find episode count for season %d in season data for IMDB ID %s", int(num), imdbID)
-				continue
-			}
-
-			seasonEpisodes := int(episodeCount)
-			episodeCache.Set(imdbID, seasonNum, seasonEpisodes)
-			episodes += seasonEpisodes
-			found = true
-			break
+	for _, season := range seasons {
+		seasonData, ok := season.(map[string]any)
+		if !ok {
+			logger.Warn("TMDB", "Could not parse season data from response for IMDB ID %s", imdbID)
+			continue
 		}
 
-		if !found {
-			episodeCache.Set(imdbID, seasonNum, 10)
-			episodes += 10
+		seasonNumRaw, ok := seasonData["season_number"].(float64)
+		if !ok {
+			logger.Warn("TMDB", "Could not find season number in season data for IMDB ID %s", imdbID)
+			continue
 		}
+		seasonNum := int(seasonNumRaw)
+
+		if !slices.Contains(missingSeasons, seasonNum) {
+			continue
+		}
+
+		episodeCountRaw, ok := seasonData["episode_count"].(float64)
+		if !ok {
+			logger.Warn("TMDB", "Could not find episode count for season %d in season data for IMDB ID %s", seasonNum, imdbID)
+			continue
+		}
+		episodeCount := int(episodeCountRaw)
+
+		episodeCache.Set(imdbID, seasonNum, episodeCount)
+		episodes += episodeCount
 	}
 
 	return episodes

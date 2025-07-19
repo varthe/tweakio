@@ -70,6 +70,7 @@ func loadFromEnv() (*Config, error) {
 	}
 
 	logger.DebugEnabled = strings.ToLower(os.Getenv("DEBUG")) == "true"
+	logger.Debug("TWEAKIO", "Debug mode enabled")
 
 	return config, nil
 }
