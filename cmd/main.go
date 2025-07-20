@@ -90,6 +90,10 @@ func handleProwlarrRequest(w http.ResponseWriter, r *http.Request, httpClient *a
 		return
 	}
 
+	if len(results) == 0 {
+		logger.Warn("TORRENTIO", "No results for IMDB ID %s. Are you being rate limited?", imdbID)
+	}
+
 	parseStart := time.Now()
 
 	var parsedResults []parser.TorrentioResult
