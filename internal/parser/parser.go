@@ -39,7 +39,7 @@ func CompileRegex() error {
 	if regexes.Season, err = regexp.Compile("(?i)\\b(?:season\\s*|s)(\\d{1,2})(?:\\s+(?:complete|full|pack|multi)|\\.[a-z]+)?\\b"); err != nil {
 		return err
 	}
-	if regexes.SeasonRange, err = regexp.Compile("(?i)\\b(?:s(?:eason)?\\s*(\\d{1,2})(?:-s?(?:eason)?\\s*(\\d{1,2}))|s(\\d{1,2})-s(\\d{1,2}))\\b"); err != nil {
+	if regexes.SeasonRange, err = regexp.Compile("(?i)\\b(?:s(?:easons?)?\\s*(\\d{1,2})\\s*(?:-|–|—|‑|\\s+to\\s+)\\s*s?(?:easons?)?\\s*(\\d{1,2})|s(\\d{1,2})\\s*-\\s*s(\\d{1,2}))\\b"); err != nil {
 		return err
 	}
 	if regexes.SingleEpisode, err = regexp.Compile("(?i)\\bs(\\d{1,2})e(\\d{1,2})\\b"); err != nil {
@@ -72,7 +72,7 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 
 	logger.Debug("PARSER", "Processing result: title=%s, infoHash=%v", title, parsedResult["infoHash"])
 
-	cleanTitle := GetCleanTitle(title)
+	cleanTitle := getCleanTitle(title)
 
 	torrentioResult := &TorrentioResult{
 		Title:    cleanTitle,
@@ -87,25 +87,19 @@ func ParseResult(result any, mediaType, imdbID string, httpClient *api.APIClient
 		return torrentioResult, nil
 	}
 
-	if season, episode, found := GetSeasonEpisode(cleanTitle); found {
-		logger.Debug("PARSER", "Found season and episode in title '%s': S%dE%d", cleanTitle, season, episode)
-		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
-		torrentioResult.Size *= float64(episodes)
-		return torrentioResult, nil
-	}
-	if start, end, found := GetSeasonRange(cleanTitle); found {
+	if start, end, found := getSeasonRange(cleanTitle); found {
 		logger.Debug("PARSER", "Found season range in title '%s': start=%d, end=%d", cleanTitle, start, end)
 		episodes := GetOrFetchEpisodes(imdbID, start, end, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
-	if season, found := GetSeasonNumber(cleanTitle); found {
+	if season, found := getSeasonNumber(cleanTitle); found {
 		logger.Debug("PARSER", "Found season number in title '%s': season=%d", cleanTitle, season)
 		episodes := GetOrFetchEpisodes(imdbID, season, season, httpClient, episodeCache)
 		torrentioResult.Size *= float64(episodes)
 		return torrentioResult, nil
 	}
-	if start, end, found := GetEpisodeRange(cleanTitle); found {
+	if start, end, found := getEpisodeRange(cleanTitle); found {
 		logger.Debug("PARSER", "Found episode range in title '%s': start=%d, end=%d", cleanTitle, start, end)
 		episodes := end - start + 1
 		torrentioResult.Size *= float64(episodes)
@@ -204,11 +198,11 @@ func parseInfo(title string, torrentioResult *TorrentioResult) {
 	torrentioResult.Source = source
 }
 
-func GetCleanTitle(title string) string {
+func getCleanTitle(title string) string {
 	return strings.Split(title, "\n")[0]
 }
 
-func GetSeasonRange(title string) (int, int, bool) {
+func getSeasonRange(title string) (int, int, bool) {
 	if match := Regexes.SeasonRange.FindStringSubmatch(title); len(match) > 0 {
 		if match[1] != "" && match[2] != "" {
 			start, _ := strconv.Atoi(match[1])
@@ -225,7 +219,7 @@ func GetSeasonRange(title string) (int, int, bool) {
 	return 0, 0, false
 }
 
-func GetSeasonNumber(title string) (int, bool) {
+func getSeasonNumber(title string) (int, bool) {
 	if match := Regexes.Season.FindStringSubmatch(title); len(match) > 1 {
 		season, _ := strconv.Atoi(match[1])
 		return season, true
@@ -233,7 +227,7 @@ func GetSeasonNumber(title string) (int, bool) {
 	return 0, false
 }
 
-func GetEpisodeRange(title string) (start, end int, found bool) {
+func getEpisodeRange(title string) (start, end int, found bool) {
 	if match := Regexes.EpisodeRange.FindStringSubmatch(title); len(match) == 3 {
 		start, _ = strconv.Atoi(match[1])
 		end, _ = strconv.Atoi(match[2])
@@ -242,11 +236,3 @@ func GetEpisodeRange(title string) (start, end int, found bool) {
 	return 0, 0, false
 }
 
-func GetSeasonEpisode(title string) (season, episode int, found bool) {
-	if match := Regexes.SingleEpisode.FindStringSubmatch(title); len(match) == 3 {
-		season, _ = strconv.Atoi(match[1])
-		episode, _ = strconv.Atoi(match[2])
-		return season, episode, true
-	}
-	return 0, 0, false
-}

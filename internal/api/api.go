@@ -76,7 +76,10 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 	url := strings.Builder{}
 	fmt.Fprintf(&url, "%s%s/stream/%s/%s", c.TorrentioBaseURL, c.TorrentioOptions, mediaType, imdbID)
 
-	if mediaType == "series" && season > 0 {
+	if mediaType == "series" {
+		if season == 0 {
+			season = 1
+		}
 		if episode == 0 {
 			episode = 1
 		}
