@@ -20,8 +20,9 @@ func TestCompiledRegexPatterns(t *testing.T) {
 			{"CHUNGITE.2023.S01.COMPLETE.1080p.NF.WEB-DL.DD5.1.Atmos.H.264", true},
 		},
 		"season_range": {
-			{"S01-S03", true}, {"Season 1-3", true}, {"S02E01-09", true},
+			{"S01-S03", true}, {"Season 1-3", true}, {"S02E01-09", false},
 			{"S03-05", true}, {"S1-3", true}, {"S1-E3", false},
+			{"Seasons 1 to 18", true}, {"season 1 to 19", true},
 			{"ONE.CHUNGUS.2023.S01-7.2160p.NF.WEB-DL.DDP5.1.Atmos.H.265", true},
 		},
 		"single_episode": {

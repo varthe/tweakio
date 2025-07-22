@@ -20,7 +20,7 @@ func main() {
 		logger.Error("TWEAKIO", "Failed to load config: %v", err)
 		os.Exit(1)
 	}
- 
+
 	if err := parser.CompileRegex(); err != nil {
 		logger.Error("TWEAKIO", "Failed to compile regex: %v", err)
 		os.Exit(1)
