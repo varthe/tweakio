@@ -1,4 +1,4 @@
-# tweakio
+# Tweakio
 Prowlarr indexer for Torrentio
 
 > [!NOTE]
