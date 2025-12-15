@@ -54,6 +54,7 @@ services:
   tweakio:
     image: varthe/tweakio:latest
     container_name: tweakio
+    restart: unless-stopped
     environment:
       TMDB_API_KEY: "" # Optional but recommended for best results. See https://www.themoviedb.org/settings/api
       DEBUG: false
