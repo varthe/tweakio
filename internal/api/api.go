@@ -84,7 +84,7 @@ func fetchJSON(httpClient *http.Client, url string, apiKey string, result any) e
 func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode int) ([]any, error) {
 	url := *c.TorrentioURL
 
-	url.Path = path.Join(url.Path, "stream", "mediaType", imdbID)
+	url.Path = path.Join(url.Path, "stream", mediaType, imdbID)
 
 	if mediaType == "series" {
 		if season == 0 {
