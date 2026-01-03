@@ -15,10 +15,16 @@ import (
 )
 
 func main() {
-	cfg, err := config.LoadConfig("./config.yaml")
+	cfg, err := config.LoadConfig()
 	if err != nil {
 		logger.Error("TWEAKIO", "Failed to load config: %v", err)
 		os.Exit(1)
+	}
+
+	if logger.DebugEnabled {
+		tmpConfig := *cfg
+		tmpConfig.TMDB.APIKey = "<REDACTED>"
+		logger.Debug("TWEAKIO", "Config loaded:\n%+v", tmpConfig)
 	}
 
 	if err := parser.CompileRegex(); err != nil {
@@ -26,7 +32,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	httpClient := api.NewAPIClient(cfg.Torrentio.BaseURL, cfg.Torrentio.Options, cfg.TMDB.APIKey)
+	httpClient := api.NewAPIClient(cfg.TorrentioURL, cfg.ProxyURL, cfg.TMDB.APIKey)
 
 	var episodeCache *cache.EpisodeCache
 	if cfg.TMDB.APIKey != "" {
