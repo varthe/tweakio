@@ -1,16 +1,12 @@
 # Tweakio
+
 Prowlarr indexer for Torrentio
 
 > [!NOTE]
 > Torrentio only returns the size of a single episode, so file size estimates for full seasons will be inaccurate by default. Providing a TMDB API key allows Tweakio to fetch the actual episode count, improving accuracy. If left empty, Tweakio will assume 10 episodes per season.
 
 > [!TIP]
-> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the Prowlarr container.
->
-> ```bash
-> docker network create tweakio_network
-> docker network connect tweakio_network prowlarr_container
-> ```
+> If Prowlarr and Tweakio are **NOT** in the same Docker Compose file, create a new network and connect it to the two containers.
 
 ### Docker Compose
 
@@ -43,6 +39,10 @@ These environment variables add optional overrides:
   |sort=qualitysize|qualityfilter=scr,cam
   ```
 
+- **`PROXY_URL`**  
+  Proxies all requests through the specified URL (gletun, warp etc).  
+  Default: _(empty)_
+
 - **`DEBUG`**  
   Enable detailed debug logging when set to `true`.  
   Default: `false`
@@ -56,16 +56,9 @@ services:
     container_name: tweakio
     restart: unless-stopped
     environment:
-      TMDB_API_KEY: "" # Optional but recommended for best results. See https://www.themoviedb.org/settings/api
-      DEBUG: false
-    ports:
-      - "3185:3185"
-    networks:
-      - tweakio_network
-
-networks:
-  tweakio_network:
-    external: true
+      - TMDB_API_KEY= # Optional but recommended for best results. See https://www.themoviedb.org/settings/api
+      - PROXY_URL= # Set this if Torrentio requests return 403 Forbidden
+    ports: 3185:3185
 ```
 
 ### Prowlarr Integration
