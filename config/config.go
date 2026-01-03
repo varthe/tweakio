@@ -11,13 +11,12 @@ import (
 
 type Config struct {
 	TorrentioURL *url.URL
-	TMDB struct {
+	TMDB         struct {
 		APIKey    string
 		CacheSize int
-	} 
+	}
 	ProxyURL *url.URL
 }
-
 
 func LoadConfig() (*Config, error) {
 	config := &Config{}
@@ -69,4 +68,3 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
-

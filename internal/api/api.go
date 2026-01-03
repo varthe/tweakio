@@ -14,10 +14,10 @@ import (
 )
 
 type APIClient struct {
-	TorrentioURL	 *url.URL
-	TMDBBaseURL      string
-	TMDBAPIKey       string
-	Client           *http.Client
+	TorrentioURL *url.URL
+	TMDBBaseURL  string
+	TMDBAPIKey   string
+	Client       *http.Client
 }
 
 type userAgentTransport struct {
@@ -33,9 +33,9 @@ func NewAPIClient(torrentioURL, proxyURL *url.URL, tmdbAPIKey string) *APIClient
 	}
 
 	return &APIClient{
-		TorrentioURL: 	   torrentioURL,
-		TMDBBaseURL:      "https://api.themoviedb.org/3",
-		TMDBAPIKey:       tmdbAPIKey,
+		TorrentioURL: torrentioURL,
+		TMDBBaseURL:  "https://api.themoviedb.org/3",
+		TMDBAPIKey:   tmdbAPIKey,
 		Client: &http.Client{
 			Transport: &userAgentTransport{
 				base: baseTransport,
