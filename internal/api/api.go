@@ -6,38 +6,47 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"path"
 	"strconv"
 	"strings"
 	"tweakio/internal/logger"
 )
 
 type APIClient struct {
-	TorrentioBaseURL string
-	TorrentioOptions string
-	TMDBBaseURL      string
-	TMDBAPIKey       string
-	Client           *http.Client
+	TorrentioURL *url.URL
+	TMDBBaseURL  string
+	TMDBAPIKey   string
+	Client       *http.Client
 }
 
 type userAgentTransport struct {
-	transport http.RoundTripper
+	base http.RoundTripper
 }
 
-func NewAPIClient(torrentioBaseURL, torrentioOptions, tmdbAPIKey string) *APIClient {
+func NewAPIClient(torrentioURL, proxyURL *url.URL, tmdbAPIKey string) *APIClient {
+	baseTransport := http.DefaultTransport
+	if proxyURL != nil {
+		baseTransport = &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+	}
+
 	return &APIClient{
-		TorrentioBaseURL: torrentioBaseURL,
-		TorrentioOptions: torrentioOptions,
-		TMDBBaseURL:      "https://api.themoviedb.org/3",
-		TMDBAPIKey:       tmdbAPIKey,
+		TorrentioURL: torrentioURL,
+		TMDBBaseURL:  "https://api.themoviedb.org/3",
+		TMDBAPIKey:   tmdbAPIKey,
 		Client: &http.Client{
-			Transport: &userAgentTransport{transport: http.DefaultTransport},
+			Transport: &userAgentTransport{
+				base: baseTransport,
+			},
 		},
 	}
 }
 
 func (u *userAgentTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36")
-	return u.transport.RoundTrip(req)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36")
+	return u.base.RoundTrip(req)
 }
 
 func fetchJSON(httpClient *http.Client, url string, apiKey string, result any) error {
@@ -72,9 +81,10 @@ func fetchJSON(httpClient *http.Client, url string, apiKey string, result any) e
 	return nil
 }
 
-func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode int) ([]interface{}, error) {
-	url := strings.Builder{}
-	fmt.Fprintf(&url, "%s%s/stream/%s/%s", c.TorrentioBaseURL, c.TorrentioOptions, mediaType, imdbID)
+func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode int) ([]any, error) {
+	url := *c.TorrentioURL
+
+	url.Path = path.Join(url.Path, "stream", mediaType, imdbID)
 
 	if mediaType == "series" {
 		if season == 0 {
@@ -83,10 +93,10 @@ func (c *APIClient) FetchFromTorrentio(mediaType, imdbID string, season, episode
 		if episode == 0 {
 			episode = 1
 		}
-		fmt.Fprintf(&url, ":%d:%d", season, episode)
+		url.Path += fmt.Sprintf(":%d:%d", season, episode)
 	}
 
-	fmt.Fprintf(&url, ".json")
+	url.Path += ".json"
 
 	logger.Info("TORRENTIO", "Fetching results from: %s", url.String())
 
