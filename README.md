@@ -55,10 +55,11 @@ services:
     image: varthe/tweakio:latest
     container_name: tweakio
     restart: unless-stopped
+    ports:
+      - 3185:3185
     environment:
       - TMDB_API_KEY= # Optional but recommended for best results. See https://www.themoviedb.org/settings/api
       - PROXY_URL= # Set this if Torrentio requests return 403 Forbidden
-    ports: 3185:3185
 ```
 
 ### Prowlarr Integration
